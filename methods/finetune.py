@@ -97,9 +97,12 @@ class Finetune(BaseLearner):
         train_dataset = data_manager.get_dataset(   #* get the data for one task
             np.arange(self._known_classes, self._total_classes),
             source="train",
-            mode="train",
+            mode="train"
         )
-        # 获得新任务的测试数据集
+        # wandb展示数据集
+        self.show_dataset(train_dataset)
+
+        # # 获得新任务的测试数据集
         test_dataset = data_manager.get_dataset(
             np.arange(0, self._total_classes), source="test", mode="test"
         )
@@ -157,7 +160,7 @@ class Finetune(BaseLearner):
             for batch_idx, (_, images, labels) in enumerate(train_data_loader):
                 images, labels = images.cuda(), labels.cuda()
                 output = model(images)["logits"]
-                loss = F.cross_entropy(output, labels)
+                loss = F.cross_entropy(output, labels.long())
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -200,7 +203,7 @@ class Finetune(BaseLearner):
                 fake_targets = labels - self._known_classes
                 output = model(images)["logits"]
                 #* finetune on the new tasks
-                loss = F.cross_entropy(output[:, self._known_classes :], fake_targets)
+                loss = F.cross_entropy(output[:, self._known_classes :], fake_targets.long())
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -212,6 +215,9 @@ class Finetune(BaseLearner):
         self._network.cuda()
         cls_acc_list = []
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
+        # wandb中显示client_distribution
+        self.show_client_distribution(user_groups,train_dataset.labels,train_dataset.classes)
+
         prog_bar = tqdm(range(self.args["com_round"]))
         for _, com in enumerate(prog_bar):
             local_weights = []

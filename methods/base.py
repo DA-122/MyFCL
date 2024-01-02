@@ -3,11 +3,15 @@ import logging
 import numpy as np
 import torch
 from torch import nn
+import wandb
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from utils.toolkit import tensor2numpy, accuracy
 from scipy.spatial.distance import cdist
 from utils.data_manager import DummyDataset, _get_idata
 from torchvision import transforms
+from einops import rearrange
+
 
 EPSILON = 1e-8
 batch_size = 64
@@ -32,7 +36,7 @@ class BaseLearner(object):
         self.save_dir = args["save_dir"]
         self.dataset_name = args["dataset"]
         self.nums = args["nums"]
-
+    
         # ----
         args["memory_size"] = 2000
         args["memory_per_class"] = 20
@@ -43,6 +47,8 @@ class BaseLearner(object):
         self._fixed_memory = args.get("fixed_memory", False)
         self._device = "0"
         # self._multiple_gpus = args["device"]
+        # 用来展示数据集
+        # self.show_example = []
 
     @property
     def exemplar_size(self):
@@ -426,5 +432,41 @@ class BaseLearner(object):
         self._class_means = _class_means
 
 
+    def show_dataset(self, train_dataset):
+        print('------task {} show dataset(random sample)-------'.format(self._cur_task))
+        indices = np.random.permutation(train_dataset.images.shape[0]).tolist()[0:100]
+        indices.sort()
+        train_img = np.take(train_dataset.images, indices, axis= 0)
+        train_img = rearrange(train_img, '(a d) h w c -> (a h) (d w) c', a = 10 , d = 10) 
+        train_img = wandb.Image(train_img)
+        wandb.log({"task_{}_dataset".format(self._cur_task): train_img})
 
+    def show_client_distribution(self, idx_map, labels, classes):
+        """展示每个Client上的类别分布   
+        Args:
+            idx_map (dict): 客户端ID与data idx的映射
+            labels (ndarray): 标签列表(idx) 
+            classes (list):  标签名称列表
+        """
+        print('---------show client distribution------------')
+        start_label = min(labels)
+        end_label = max(labels)
+        n_clients = len(idx_map)
+        # 独立同分布
+        client_idcs = [[] for i in range(n_clients)]
+        for client in idx_map:
+            for idx in idx_map[client]:
+                client_idcs[client].append(idx)
 
+        plt.figure(figsize=(12, 8))
+        plt.hist([labels[idc] for idc in client_idcs], stacked=True,
+                bins=np.arange(min(labels)-0.5, max(labels) + 1.5, 1),
+                label=["Client {}".format(i) for i in range(n_clients)],
+                rwidth=0.5)
+        plt.xticks(np.arange(start_label,end_label + 1), classes)
+        plt.xlabel("Label type")
+        plt.ylabel("Number of samples")
+        plt.legend(loc="upper right")
+        plt.title("Display Label Distribution on Different Clients")
+        # plt.show()
+        wandb.log({"task_{}_distribution_beta{}".format(self._cur_task,self.args["beta"]): wandb.Plotly(plt.gcf())})

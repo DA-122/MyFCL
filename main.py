@@ -7,6 +7,7 @@ from methods.icarl import iCaRL
 from methods.lwf import LwF
 from methods.ewc import EWC
 from methods.target import TARGET
+from methods.myfcl import MyFCL
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -21,8 +22,10 @@ def get_learner(model_name, args):
         return LwF(args)
     elif name == "finetune":
         return Finetune(args)
-    elif name == "ours":
+    elif name == "target":
         return TARGET(args)
+    elif name == "ours":
+        return MyFCL(args)
     else:
         assert 0
         
@@ -47,7 +50,8 @@ def train(args):
         learner.incremental_train(data_manager) # train for one task
         cnn_accy, nme_accy = learner.eval_task()
         learner.after_task()
-
+        # 增加检查点
+        learner.save_checkpoint(args["exp_name"] + task)
         print("CNN: {}".format(cnn_accy["grouped"]))
         cnn_curve["top1"].append(cnn_accy["top1"])
         print("CNN top1 curve: {}".format(cnn_curve["top1"]))

@@ -46,6 +46,7 @@ class iCIFAR10(iData):
         self.test_data, self.test_targets = test_dataset.data, np.array(
             test_dataset.targets
         )
+        self.classes = train_dataset.classes
 
 
 class iCIFAR100(iData):
@@ -74,6 +75,8 @@ class iCIFAR100(iData):
         self.test_data, self.test_targets = test_dataset.data, np.array(
             test_dataset.targets
         )
+        self.classes = train_dataset.classes
+
 
 
 class iImageNet1000(iData):

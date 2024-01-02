@@ -10,6 +10,7 @@ import numpy as np
 import torch.backends.cudnn as cudnn
 
 
+
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -217,9 +218,9 @@ class DataManager(object):
         data, targets = np.concatenate(data), np.concatenate(targets)
 
         if ret_data:
-            return data, targets, DummyDataset(data, targets, trsf, self.use_path)
+            return data, targets, DummyDataset(data, targets, trsf, self.use_path,self._classes[indices[0]:indices[-1] + 1])
         else:
-            return DummyDataset(data, targets, trsf, self.use_path)
+            return DummyDataset(data, targets, trsf, self.use_path, self._classes[indices[0]:indices[-1] + 1])
 
     def get_dataset_with_split(
         self, indices, source, mode, appendent=None, val_samples_per_class=0
@@ -285,6 +286,7 @@ class DataManager(object):
         self._train_data, self._train_targets = idata.train_data, idata.train_targets
         self._test_data, self._test_targets = idata.test_data, idata.test_targets
         self.use_path = idata.use_path
+        self._classes = idata.classes
 
         # Transforms 获得数据集Transforms
         self._train_trsf = idata.train_trsf
@@ -341,12 +343,13 @@ class DataManager(object):
 
 
 class DummyDataset(Dataset):
-    def __init__(self, images, labels, trsf, use_path=False):
+    def __init__(self, images, labels, trsf, use_path=False, classes = None):
         assert len(images) == len(labels), "Data size error!"
         self.images = images
         self.labels = labels
         self.trsf = trsf
         self.use_path = use_path
+        self.classes = classes
 
     def __len__(self):
         return len(self.images)
@@ -431,3 +434,4 @@ def pil_loader(path):
 #         return accimage_loader(path)
 #     else:
 #         return pil_loader(path)
+

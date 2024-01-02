@@ -65,6 +65,7 @@ class LwF(BaseLearner):
         # )
         # import pdb
         # pdb.set_trace()
+
         test_dataset = data_manager.get_dataset(
             np.arange(0, self._total_classes), source="test", mode="test"
         )
