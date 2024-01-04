@@ -74,7 +74,7 @@ def args_parser():
     parser.add_argument('--seed', type=int, default=2023, help='random seed')
 
     # federated continual learning settings
-    parser.add_argument('--dataset', type=str, default="cifar100", help='which dataset')
+    parser.add_argument('--dataset', type=str, default="cifar10", help='which dataset')
     parser.add_argument('--tasks', type=int, default=5, help='num of tasks')
     # todo
     parser.add_argument('--method', type=str, default="finetune", help='choose a learner')
@@ -97,7 +97,12 @@ def args_parser():
 if __name__ == '__main__':
 
     args = args_parser()
-    args.num_class = 200 if args.dataset=="tiny_imagenet" else 100 
+    if args.dataset=="tiny_imagenet":
+        args.num_class = 200 
+    elif args.dataset=="cifar10":
+        args.num_class = 10 
+    else:
+        args.num_class = 100 
     args.init_cls = int(args.num_class / args.tasks)
     args.increment = args.init_cls
 
