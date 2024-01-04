@@ -11,7 +11,7 @@ from convs.ucir_resnet import resnet50 as cosine_resnet50
 from convs.linears import SimpleLinear, SplitCosineLinear, CosineLinear
 from convs.modified_represnet import resnet18_rep,resnet34_rep
 from convs.resnet_cbam import resnet18_cbam,resnet34_cbam,resnet50_cbam
-
+from torchsummary import summary
 
 def get_convnet(args, pretrained=False):
     name = args["net"].lower()
@@ -48,6 +48,7 @@ class BaseNet(nn.Module):
         super(BaseNet, self).__init__()
 
         self.convnet = get_convnet(args, pretrained)
+        # summary(self.convnet, (3,32,32), device="cpu")
         self.fc = None
 
     @property

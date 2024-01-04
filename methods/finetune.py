@@ -1,5 +1,4 @@
-# finetune 微调方法 fedavg
-
+import copy, wandb
 import numpy as np
 import torch
 from torch import nn
@@ -9,16 +8,15 @@ from torch.utils.data import DataLoader
 from utils.inc_net import IncrementalNet
 from methods.base import BaseLearner
 from utils.data_manager import partition_data, DatasetSplit, average_weights, setup_seed
-import copy, wandb
+
 from sklearn.metrics import confusion_matrix
+from torchsummary import summary
+# finetune 微调方法 fedavg
 
 # init_epoch = 200
 # com_round = 100  
 # num_users = 5 # 5, 
 # frac = 1 # 
-
-
-
 
 # local_bs = 128  # cifar100, 5w, 5 tasks, 1w for each task, 2k for each client
 # local_ep = 5
@@ -43,8 +41,6 @@ def print_data_stats(client_id, train_data_loader):
     print(sorted(temp.items(),key=lambda x:x[0]))
 
 
-
-
 def refine_as_not_true(logits, targets, num_classes):
     nt_positions = torch.arange(0, num_classes).cuda()
     nt_positions = nt_positions.repeat(logits.size(0), 1)
@@ -64,7 +60,7 @@ class Finetune(BaseLearner):
 
     def after_task(self):
         self._known_classes = self._total_classes
-        self.pre_loader = self.test_loader
+        # self.pre_loader = self.test_loader
         self._old_network = self._network.copy().freeze()
 
 
@@ -91,6 +87,7 @@ class Finetune(BaseLearner):
             self._cur_task
         )
         self._network.update_fc(self._total_classes)
+        # summary(self._network, (3,32,32), device='cpu')
         print("Learning on {}-{}".format(self._known_classes, self._total_classes))
 
         # 获得新任务的训练数据集
@@ -100,7 +97,8 @@ class Finetune(BaseLearner):
             mode="train"
         )
         # wandb展示数据集
-        self.show_dataset(train_dataset)
+        if self.wandb == 1:
+            self.show_dataset(train_dataset)
 
         # # 获得新任务的测试数据集
         test_dataset = data_manager.get_dataset(
@@ -216,7 +214,8 @@ class Finetune(BaseLearner):
         cls_acc_list = []
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
         # wandb中显示client_distribution
-        self.show_client_distribution(user_groups,train_dataset.labels,train_dataset.classes)
+        if self.wandb == 1:
+            self.show_client_distribution(user_groups,train_dataset.labels,train_dataset.classes)
 
         prog_bar = tqdm(range(self.args["com_round"]))
         for _, com in enumerate(prog_bar):
@@ -224,17 +223,22 @@ class Finetune(BaseLearner):
             m = max(int(self.args["frac"] * self.args["num_users"]), 1)
             idxs_users = np.random.choice(range(self.args["num_users"]), m, replace=False)
             for idx in idxs_users:
+                # todo 并行跑代码，充分利用显存
                 local_train_loader = DataLoader(DatasetSplit(train_dataset, user_groups[idx]), 
-                    batch_size=self.args["local_bs"], shuffle=True, num_workers=4)
+                    batch_size=self.args["local_bs"], shuffle=True, num_workers=0)
                 if self._cur_task == 0:
                     w = self._local_update(copy.deepcopy(self._network), local_train_loader)
                 else:
                     w = self._local_finetune(copy.deepcopy(self._network), local_train_loader)
                 local_weights.append(copy.deepcopy(w))
+                # del local_train_loader
+                # torch.cuda.empty_cache()
+
             # update global weights
             global_weights = average_weights(local_weights)
             self._network.load_state_dict(global_weights)
             if com % 1 == 0:
+                # 每个类别的准确率
                 cls_acc = self.per_cls_acc(self.test_loader, self._network)
                 cls_acc_list.append(cls_acc)
 
@@ -244,6 +248,11 @@ class Finetune(BaseLearner):
                 prog_bar.set_description(info)
                 if self.wandb == 1:
                     wandb.log({'Task_{}, accuracy'.format(self._cur_task): test_acc})
+            
+            #!
+            # break
+
+
         acc_arr = np.array(cls_acc_list)
         acc_max = acc_arr.max(axis=0)
         if self._cur_task == 4:

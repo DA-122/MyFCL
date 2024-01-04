@@ -71,45 +71,23 @@ class BaseLearner(object):
             return self._network.module.feature_dim
         else:
             return self._network.feature_dim
-
+            
     # 需要重写的方法
-    def real_build_rehearsal_memory(self):
+    # 抽象方法：开始下一个任务
+    def after_task(self):
         pass
 
+    # 抽象方法: 增量方式进行训练
+    def incremental_train(self):
+        pass
 
-    def combine_dataset(self, pre_dataset, cur_dataset, size):
-        # correct
-        idx = pre_dataset.idxs
-        pre_labels = pre_dataset.dataset.labels[idx]  # label 22, wrong
-        pre_data = pre_dataset.dataset.images[idx]
+    # 抽象方法: 模拟联邦学习训练
+    def _fl_train(self):
+        pass
 
-        idx = cur_dataset.idxs
-        cur_labels = cur_dataset.dataset.labels[idx]
-        cur_data = cur_dataset.dataset.images[idx]
-
-        if size !=0:
-            idxs = np.random.choice(range(len(pre_dataset.idxs)), size, replace=False)
-            selected_exemplar_data, selected_exemplar_label = pre_data[idxs], pre_labels[idxs]
-            
-            combined_data = np.concatenate((cur_data, selected_exemplar_data),axis=0)
-            combined_label = np.concatenate((cur_labels, selected_exemplar_label),axis=0)
-            # combined_label = np.concatenate(combined_label)
-            # idata = _get_idata(self.dataset_name)
-            # _train_trsf, _common_trsf = idata.train_trsf, idata.common_trsf
-            # trsf = transforms.Compose([*_train_trsf, *_common_trsf])      
-            # combined_dataset = DummyDataset(combined_data, combined_label, trsf, use_path=False)
-        else:
-            combined_data = np.concatenate((cur_data, pre_data),axis=0)
-            combined_label = np.concatenate((cur_labels, pre_labels),axis=0)
-            # combined_data, combined_label = np.vstack((cur_dataset.images, pre_dataset.images)), np.vstack((cur_dataset.labels, pre_dataset.labels))
-            # combined_label = np.concatenate(combined_label)
-        idata = _get_idata(self.dataset_name)
-        _train_trsf, _common_trsf = idata.train_trsf, idata.common_trsf
-        trsf = transforms.Compose([*_train_trsf, *_common_trsf])      
-        combined_dataset = DummyDataset(combined_data, combined_label, trsf, use_path=False)
-
-        return combined_dataset
-
+    # 抽象方法：构造rehearsal_memory(自己写)
+    def real_build_rehearsal_memory(self):
+        pass
     
     def build_rehearsal_memory(self, data_manager, per_class):
         if self._fixed_memory:  # false
@@ -125,9 +103,6 @@ class BaseLearner(object):
             "model_state_dict": self._network.state_dict(),
         }
         torch.save(save_dict, "{}_{}.pkl".format(filename, self._cur_task))
-
-    def after_task(self):
-        pass
 
     def _evaluate(self, y_pred, y_true):
         ret = {}
@@ -153,11 +128,6 @@ class BaseLearner(object):
 
         return cnn_accy, nme_accy
 
-    def incremental_train(self):
-        pass
-
-    def _train(self):
-        pass
 
     def _get_memory(self):
         if len(self._data_memory) == 0:
@@ -205,7 +175,58 @@ class BaseLearner(object):
 
         return np.argsort(scores, axis=1)[:, : self.topk], y_true  # [N, topk]
 
+    def combine_dataset(self, pre_dataset, cur_dataset, size):
+        """合并两个数据集
+
+        Args:
+            pre_dataset (Dataset): 旧任务的Dataset
+            cur_dataset (Dataset): 当前任务Dataset
+            size (int): 旧任务size
+
+        Returns:
+            Dataset: 合并后的Dataset
+        """
+        # correct
+        idx = pre_dataset.idxs
+        pre_labels = pre_dataset.dataset.labels[idx]  # label 22, wrong
+        pre_data = pre_dataset.dataset.images[idx]
+
+        idx = cur_dataset.idxs
+        cur_labels = cur_dataset.dataset.labels[idx]
+        cur_data = cur_dataset.dataset.images[idx]
+
+        if size !=0:
+            idxs = np.random.choice(range(len(pre_dataset.idxs)), size, replace=False)
+            selected_exemplar_data, selected_exemplar_label = pre_data[idxs], pre_labels[idxs]
+            
+            combined_data = np.concatenate((cur_data, selected_exemplar_data),axis=0)
+            combined_label = np.concatenate((cur_labels, selected_exemplar_label),axis=0)
+            # combined_label = np.concatenate(combined_label)
+            # idata = _get_idata(self.dataset_name)
+            # _train_trsf, _common_trsf = idata.train_trsf, idata.common_trsf
+            # trsf = transforms.Compose([*_train_trsf, *_common_trsf])      
+            # combined_dataset = DummyDataset(combined_data, combined_label, trsf, use_path=False)
+        else:
+            combined_data = np.concatenate((cur_data, pre_data),axis=0)
+            combined_label = np.concatenate((cur_labels, pre_labels),axis=0)
+            # combined_data, combined_label = np.vstack((cur_dataset.images, pre_dataset.images)), np.vstack((cur_dataset.labels, pre_dataset.labels))
+            # combined_label = np.concatenate(combined_label)
+        idata = _get_idata(self.dataset_name)
+        _train_trsf, _common_trsf = idata.train_trsf, idata.common_trsf
+        trsf = transforms.Compose([*_train_trsf, *_common_trsf])      
+        combined_dataset = DummyDataset(combined_data, combined_label, trsf, use_path=False)
+
+        return combined_dataset
+
+
     def _extract_vectors(self, loader):
+        """使用模型提取表征
+        Args:
+            loader (DataLoader): Train_Loader / Test_Loader
+
+        Returns:
+            tuple (ndarray, ndarray): 表征和类别的ndarray
+        """
         self._network.eval()
         vectors, targets = [], []
         for _, _inputs, _targets in loader:
@@ -218,10 +239,8 @@ class BaseLearner(object):
                 _vectors = tensor2numpy(
                     self._network.extract_vector(_inputs.cuda())
                 )
-
             vectors.append(_vectors)
             targets.append(_targets)
-
         return np.concatenate(vectors), np.concatenate(targets)
 
     def _reduce_exemplar(self, data_manager, m):
@@ -333,6 +352,12 @@ class BaseLearner(object):
             self._class_means[class_idx, :] = mean
 
     def _construct_exemplar_unified(self, data_manager, m):
+        """
+            herding 方式为新类构建Buffer(求类别均值)
+        Args:
+            data_manager (_type_): _description_
+            m (_type_): 每个类别存储的样本数量
+        """
         print(
             "Constructing exemplars for new classes...({} per classes)".format(m)
         )
@@ -371,11 +396,12 @@ class BaseLearner(object):
                 class_dset, batch_size=batch_size, shuffle=False, num_workers=4
             )
 
+            # 提取样本表征，计算类别均值
             vectors, _ = self._extract_vectors(class_loader)
             vectors = (vectors.T / (np.linalg.norm(vectors.T, axis=0) + EPSILON)).T
             class_mean = np.mean(vectors, axis=0)
 
-            # Select
+            # 按照 KNN 选择 K 个 样本 加入到selected_exemlars
             selected_exemplars = []
             exemplar_vectors = []
             for k in range(1, m + 1):

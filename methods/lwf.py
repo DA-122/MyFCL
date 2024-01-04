@@ -72,7 +72,7 @@ class LwF(BaseLearner):
         # if self.args["dataset"] != "tiny_imagenet":
 
         self.test_loader = DataLoader(
-            test_dataset, batch_size=256, shuffle=False, num_workers=4
+            test_dataset, batch_size=256, shuffle=False, num_workers=0
         )
 
         setup_seed(self.seed)

@@ -1,5 +1,7 @@
 import argparse
 import wandb, os
+# Pytorch 性能调优工具
+from torch.autograd.profiler import profile
 from utils.data_manager import DataManager, setup_seed
 from utils.toolkit import count_parameters
 from methods.finetune import Finetune
@@ -51,32 +53,37 @@ def train(args):
         cnn_accy, nme_accy = learner.eval_task()
         learner.after_task()
         # 增加检查点
-        learner.save_checkpoint(args["exp_name"] + task)
+        learner.save_checkpoint("checkpoint_{}_{}".format(args["exp_name"],task))
         print("CNN: {}".format(cnn_accy["grouped"]))
         cnn_curve["top1"].append(cnn_accy["top1"])
         print("CNN top1 curve: {}".format(cnn_curve["top1"]))
+        # !
+        # break
+    
 
 def args_parser():
     parser = argparse.ArgumentParser(description='benchmark for federated continual learning')
     # Exp settings
-    parser.add_argument('--exp_name', type=str, default='', help='name of this experiment')
-    parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
+    # todo
+    parser.add_argument('--exp_name', type=str, default='test', help='name of this experiment')
+    # todo
+    parser.add_argument('--wandb', type=int, default=1, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
     parser.add_argument('--project', type=str, default="TARGET", help='wandb project')
     parser.add_argument('--group', type=str, default="exp1", help='wandb group')
     parser.add_argument('--seed', type=int, default=2023, help='random seed')
-    
 
     # federated continual learning settings
     parser.add_argument('--dataset', type=str, default="cifar100", help='which dataset')
     parser.add_argument('--tasks', type=int, default=5, help='num of tasks')
-    parser.add_argument('--method', type=str, default="", help='choose a learner')
+    # todo
+    parser.add_argument('--method', type=str, default="finetune", help='choose a learner')
     parser.add_argument('--net', type=str, default="resnet32", help='choose a model')
     parser.add_argument('--com_round', type=int, default=100, help='communication rounds')
     parser.add_argument('--num_users', type=int, default=5, help='num of clients')
     parser.add_argument('--local_bs', type=int, default=128, help='local batch size')
     parser.add_argument('--local_ep', type=int, default=5, help='local training epochs')
-    parser.add_argument('--beta', type=float, default=0.3, help='control the degree of label skew')
+    parser.add_argument('--beta', type=float, default=0.5, help='control the degree of label skew')
     parser.add_argument('--frac', type=float, default=1.0, help='the fraction of selected clients')
     parser.add_argument('--nums', type=int, default=8000, help='the num of synthetic data')
     parser.add_argument('--kd', type=int, default=25, help='for kd loss')
@@ -104,7 +111,11 @@ if __name__ == '__main__':
     if args.wandb == 1:
         wandb.init(config=args, project=args.project, group=args.group, name=args.exp_name)
     args = vars(args)
-    
+
     train(args)
 
-
+    # 性能分析
+    # with profile(enabled=True, use_cuda=True, record_shapes=False, profile_memory=False) as prof:
+    #     train(args)
+    # print(prof.table())
+    # prof.export_chrome_trace('./resnet_profile.json')

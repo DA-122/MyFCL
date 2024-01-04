@@ -1,3 +1,4 @@
+import copy, wandb
 import numpy as np
 import torch
 from torch import nn
@@ -7,14 +8,13 @@ from torch.utils.data import DataLoader
 from utils.inc_net import IncrementalNet
 from methods.base import BaseLearner
 from utils.data_manager import partition_data, DatasetSplit, average_weights, setup_seed
-import copy, wandb
+
+import torch.nn.init as init
+import time, os, math
 from abc import ABC
-import torch.nn.functional as F
 from torch.autograd import Variable
 from torchvision import transforms
 from kornia import augmentation
-import time, os, math
-import torch.nn.init as init
 from PIL import Image
 
 
@@ -467,7 +467,6 @@ class GlobalSynthesizer(ABC):
 
         
 
-
 def weight_init(m):
     '''
     Usage:
@@ -726,6 +725,7 @@ class TARGET(BaseLearner):
     def _fl_train(self, train_dataset, test_loader):
         self._network.cuda()
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
+        
         prog_bar = tqdm(range(self.args["com_round"]))
         for _, com in enumerate(prog_bar):
             local_weights = []
