@@ -67,7 +67,7 @@ def args_parser():
     # todo
     parser.add_argument('--exp_name', type=str, default='test', help='name of this experiment')
     # todo
-    parser.add_argument('--wandb', type=int, default=1, help='1 for using wandb')
+    parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
     parser.add_argument('--project', type=str, default="TARGET", help='wandb project')
     parser.add_argument('--group', type=str, default="exp1", help='wandb group')
@@ -83,7 +83,7 @@ def args_parser():
     parser.add_argument('--num_users', type=int, default=5, help='num of clients')
     parser.add_argument('--local_bs', type=int, default=128, help='local batch size')
     parser.add_argument('--local_ep', type=int, default=5, help='local training epochs')
-    parser.add_argument('--beta', type=float, default=0.5, help='control the degree of label skew')
+    parser.add_argument('--beta', type=float, default=0, help='control the degree of label skew')
     parser.add_argument('--frac', type=float, default=1.0, help='the fraction of selected clients')
     parser.add_argument('--nums', type=int, default=8000, help='the num of synthetic data')
     parser.add_argument('--kd', type=int, default=25, help='for kd loss')

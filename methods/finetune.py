@@ -214,8 +214,7 @@ class Finetune(BaseLearner):
         cls_acc_list = []
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
         # wandb中显示client_distribution
-        if self.wandb == 1:
-            self.show_client_distribution(user_groups,train_dataset.labels,train_dataset.classes)
+        self.show_client_distribution(user_groups,train_dataset.labels,train_dataset.classes)
 
         prog_bar = tqdm(range(self.args["com_round"]))
         for _, com in enumerate(prog_bar):

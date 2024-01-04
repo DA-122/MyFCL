@@ -101,8 +101,11 @@ class BaseLearner(object):
         save_dict = {
             "tasks": self._cur_task,
             "model_state_dict": self._network.state_dict(),
-        }
+        }        
         torch.save(save_dict, "{}_{}.pkl".format(filename, self._cur_task))
+        # torch.save(self._network,"{}_{}.pkl".format(filename, self._cur_task))
+
+
 
     def _evaluate(self, y_pred, y_true):
         ret = {}
@@ -494,5 +497,6 @@ class BaseLearner(object):
         plt.ylabel("Number of samples")
         plt.legend(loc="upper right")
         plt.title("Display Label Distribution on Different Clients")
-        # plt.show()
-        wandb.log({"task_{}_distribution_beta{}".format(self._cur_task,self.args["beta"]): wandb.Plotly(plt.gcf())})
+        plt.show()
+        if self.wandb == 1:
+            wandb.log({"task_{}_distribution_beta{}".format(self._cur_task,self.args["beta"]): wandb.Plotly(plt.gcf())})()
