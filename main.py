@@ -88,7 +88,7 @@ def args_parser():
     parser.add_argument('--frac', type=float, default=1.0, help='the fraction of selected clients')
     parser.add_argument('--nums', type=int, default=8000, help='the num of synthetic data')
     parser.add_argument('--kd', type=int, default=25, help='for kd loss')
-    parser.add_argument('--memory_size', type=int, default=300, help='the num of real data per task')
+    parser.add_argument('--memory_size', type=int, default=200, help='the num of real data per task')
     
     args = parser.parse_args()
     

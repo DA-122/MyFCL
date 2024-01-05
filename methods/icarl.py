@@ -31,7 +31,7 @@ class iCaRL(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
         self._network = IncrementalNet(args, False)
-        self.memory_size = args["memory_size"]
+        # self._memory_size = args["memory_size"]
 
     def after_task(self):
         self._old_network = self._network.copy().freeze()
@@ -160,7 +160,7 @@ class iCaRL(BaseLearner):
                     current_local_dataset = DatasetSplit(train_dataset, user_groups[idx])
                     previous_local_dataset = self.get_all_previous_dataset(data_manager, idx) 
 
-                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self._memory_per_class * self._known_classes)
+                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self._memory_size)
                     local_dataset = DatasetSplit(local_dataset, range(local_dataset.labels.shape[0]))
 
                 local_train_loader = DataLoader(local_dataset, batch_size=self.args["local_bs"], shuffle=True, num_workers=0)

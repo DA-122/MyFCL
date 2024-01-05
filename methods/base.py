@@ -42,8 +42,8 @@ class BaseLearner(object):
         self.nums = args["nums"]
     
         # ----
-        args["memory_size"] = 400
-        args["memory_per_class"] = 20
+        # args["memory_size"] = 200
+        args["memory_per_class"] = 2
         args["fixed_memory"] = False
 
         self._memory_size = args["memory_size"]
@@ -201,7 +201,8 @@ class BaseLearner(object):
         cur_data = cur_dataset.dataset.images[idx]
 
         if size !=0:
-            idxs = np.random.choice(range(len(pre_dataset.idxs)), size, replace=False)
+            # 随机采取旧样本数据
+            idxs = np.random.choice(range(len(pre_dataset.idxs)), min(size,len(pre_dataset.idxs)), replace=False)
             selected_exemplar_data, selected_exemplar_label = pre_data[idxs], pre_labels[idxs]
             
             combined_data = np.concatenate((cur_data, selected_exemplar_data),axis=0)
