@@ -42,7 +42,7 @@ class BaseLearner(object):
         self.nums = args["nums"]
     
         # ----
-        args["memory_size"] = 2000
+        args["memory_size"] = 400
         args["memory_per_class"] = 20
         args["fixed_memory"] = False
 
@@ -534,5 +534,3 @@ class BaseLearner(object):
         plt.yticks([])
         plt.savefig('res18-cifar100_{}.pdf'.format(self._cur_task), dpi=300) # 保存图像
         # plt.show()
-
-

@@ -12,8 +12,6 @@ EPSILON = 1e-8
 T = 2
 
 
-
-
 def print_data_stats(client_id, train_data_loader):
     # pdb.set_trace()
     def sum_dict(a,b):
@@ -29,7 +27,6 @@ def print_data_stats(client_id, train_data_loader):
     return sorted(temp.items(),key=lambda x:x[0])
 
 
-
 class iCaRL(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
@@ -41,6 +38,15 @@ class iCaRL(BaseLearner):
         self._known_classes = self._total_classes
 
     def get_all_previous_dataset(self, data_manager, idx):
+        """获得某个客户端旧任务的所有Data
+
+        Args:
+            data_manager (DataManager): DataManager对象
+            idx (int): client idx
+
+        Returns:
+            Dataset: 客户端idx的所有先前的数据
+        """
         # for second task, self._cur_task=1
         bgn_cls, end_cls = 0, self.each_task
         train_dataset = data_manager.get_dataset(
@@ -86,7 +92,7 @@ class iCaRL(BaseLearner):
             np.arange(0, self._total_classes), source="test", mode="test"
         )
         self.test_loader = DataLoader(
-            test_dataset, batch_size=256, shuffle=False, num_workers=4
+            test_dataset, batch_size=256, shuffle=False, num_workers=0
         )
         self._network.cuda()
         setup_seed(self.seed)
@@ -140,7 +146,7 @@ class iCaRL(BaseLearner):
         self._network.cuda()
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
         prog_bar = tqdm(range(self.args["com_round"]))
-        
+
         for _, com in enumerate(prog_bar):
             local_weights = []
             m = max(int(self.args["frac"] * self.args["num_users"]), 1)
@@ -154,10 +160,10 @@ class iCaRL(BaseLearner):
                     current_local_dataset = DatasetSplit(train_dataset, user_groups[idx])
                     previous_local_dataset = self.get_all_previous_dataset(data_manager, idx) 
 
-                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self.memory_size)
+                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self._memory_per_class * self._known_classes)
                     local_dataset = DatasetSplit(local_dataset, range(local_dataset.labels.shape[0]))
 
-                local_train_loader = DataLoader(local_dataset, batch_size=self.args["local_bs"], shuffle=True, num_workers=4)
+                local_train_loader = DataLoader(local_dataset, batch_size=self.args["local_bs"], shuffle=True, num_workers=0)
                 tmp = print_data_stats(idx, local_train_loader)
                 if com !=0:
                     tmp = ""

@@ -6,3 +6,4 @@ ckpt
 *.pt
 *.pkl
 *.pdf
+*.out

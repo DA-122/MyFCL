@@ -13,7 +13,6 @@ from methods.myfcl import MyFCL
 import warnings
 warnings.filterwarnings('ignore')
 
-
 def get_learner(model_name, args):
     name = model_name.lower()
     if name == "icarl":
@@ -65,22 +64,22 @@ def args_parser():
     parser = argparse.ArgumentParser(description='benchmark for federated continual learning')
     # Exp settings
     # todo
-    parser.add_argument('--exp_name', type=str, default='test', help='name of this experiment')
+    parser.add_argument('--exp_name', type=str, default='icarl_10clients_5tasks_iid', help='name of this experiment')
     # todo
-    parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
+    parser.add_argument('--wandb', type=int, default=1, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
     parser.add_argument('--project', type=str, default="TARGET", help='wandb project')
-    parser.add_argument('--group', type=str, default="exp1", help='wandb group')
+    parser.add_argument('--group', type=str, default="5tasks_cifar100", help='wandb group')
     parser.add_argument('--seed', type=int, default=2023, help='random seed')
 
     # federated continual learning settings
     parser.add_argument('--dataset', type=str, default="cifar100", help='which dataset')
     parser.add_argument('--tasks', type=int, default=5, help='num of tasks')
     # todo
-    parser.add_argument('--method', type=str, default="finetune", help='choose a learner')
+    parser.add_argument('--method', type=str, default="icarl", help='choose a learner')
     parser.add_argument('--net', type=str, default="resnet32", help='choose a model')
     parser.add_argument('--com_round', type=int, default=100, help='communication rounds')
-    parser.add_argument('--num_users', type=int, default=5, help='num of clients')
+    parser.add_argument('--num_users', type=int, default=10, help='num of clients')
     parser.add_argument('--local_bs', type=int, default=128, help='local batch size')
     parser.add_argument('--local_ep', type=int, default=5, help='local training epochs')
     parser.add_argument('--beta', type=float, default=0, help='control the degree of label skew')
