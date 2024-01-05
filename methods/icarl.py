@@ -132,7 +132,7 @@ class iCaRL(BaseLearner):
                     self._old_network(images)["logits"],
                     T,
                 )
-
+                        
                 loss = loss_clf + loss_kd
 
                 optimizer.zero_grad()

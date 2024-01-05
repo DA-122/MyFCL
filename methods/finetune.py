@@ -116,7 +116,6 @@ class Finetune(BaseLearner):
             test_dataset, batch_size=256, shuffle=False, num_workers=4
         )
         setup_seed(self.seed)
-        #!
         self._fl_train(train_dataset, self.test_loader)
         
 

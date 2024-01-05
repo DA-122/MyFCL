@@ -52,10 +52,11 @@ def refine_as_not_true(logits, targets, num_classes):
     return logits
 
 
-class Finetune(BaseLearner):
+class ReplayFinetune(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
         self._network = IncrementalNet(args, False)
+        self.memory_size = args["memory_size"]
         self.acc = []
 
     def after_task(self):
@@ -140,7 +141,7 @@ class Finetune(BaseLearner):
         # self.show_Tsne(test_dataset)
 
         self.test_loader = DataLoader(
-            test_dataset, batch_size=256, shuffle=False, num_workers=4
+            test_dataset, batch_size=256, shuffle=False, num_workers=0
         )
         setup_seed(self.seed)
         #!
@@ -225,7 +226,6 @@ class Finetune(BaseLearner):
         # print(out_cls_acc)
         
 
-        
 
     def _local_finetune(self, model, train_data_loader):
         model.train()
@@ -246,6 +246,9 @@ class Finetune(BaseLearner):
         return model.state_dict()
 
     def _fl_train(self, train_dataset, test_loader,data_manager):
+        # if self._cur_task == 0:
+        #     return
+
         self._network.cuda()
         cls_acc_list = []
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
@@ -266,7 +269,7 @@ class Finetune(BaseLearner):
                     current_local_dataset = DatasetSplit(train_dataset, user_groups[idx])
                     previous_local_dataset = self.get_all_previous_dataset(data_manager, idx) 
 
-                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self.memory_size)
+                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self._memory_per_class*self._known_classes)
                     local_dataset = DatasetSplit(local_dataset, range(local_dataset.labels.shape[0]))
 
                 local_train_loader = DataLoader(DatasetSplit(train_dataset, user_groups[idx]), 

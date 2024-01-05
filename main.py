@@ -10,6 +10,7 @@ from methods.lwf import LwF
 from methods.ewc import EWC
 from methods.target import TARGET
 from methods.myfcl import MyFCL
+from methods.replay_finetune import ReplayFinetune
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -27,6 +28,8 @@ def get_learner(model_name, args):
         return TARGET(args)
     elif name == "ours":
         return MyFCL(args)
+    elif name == "replayfinetune":
+        return ReplayFinetune(args)
     else:
         assert 0
         
@@ -42,20 +45,20 @@ def train(args):
         args["increment"],
     )
     learner = get_learner(args["method"], args)
-    cnn_curve, nme_curve = {"top1": [], "top5": []}, {"top1": [], "top5": []}
+    # cnn_curve, nme_curve = {"top1": [], "top5": []}, {"top1": [], "top5": []}
     
     # train for each task
     for task in range(data_manager.nb_tasks):
         print("All params: {}, Trainable params: {}".format(count_parameters(learner._network), 
             count_parameters(learner._network, True))) 
         learner.incremental_train(data_manager) # train for one task
-        cnn_accy, nme_accy = learner.eval_task()
+        # cnn_accy, nme_accy = learner.eval_task()
         learner.after_task()
         # 增加检查点
-        learner.save_checkpoint("checkpoint_{}_{}".format(args["exp_name"],task))
-        print("CNN: {}".format(cnn_accy["grouped"]))
-        cnn_curve["top1"].append(cnn_accy["top1"])
-        print("CNN top1 curve: {}".format(cnn_curve["top1"]))
+        # learner.save_checkpoint("checkpoint_{}_{}".format(args["exp_name"],task))
+        # print("CNN: {}".format(cnn_accy["grouped"]))
+        # cnn_curve["top1"].append(cnn_accy["top1"])
+        # print("CNN top1 curve: {}".format(cnn_curve["top1"]))
         # !
         # break
     
@@ -64,19 +67,18 @@ def args_parser():
     parser = argparse.ArgumentParser(description='benchmark for federated continual learning')
     # Exp settings
     # todo
-    parser.add_argument('--exp_name', type=str, default='icarl_10clients_5tasks_iid', help='name of this experiment')
+    parser.add_argument('--exp_name', type=str, default='replayfinetune_10clients_5tasks', help='name of this experiment')
+    parser.add_argument('--method', type=str, default="replayfinetune", help='choose a learner')
+    parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
+    parser.add_argument('--group', type=str, default="5tasks_cifar100", help='wandb group')
+
     # todo
-    parser.add_argument('--wandb', type=int, default=1, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
     parser.add_argument('--project', type=str, default="TARGET", help='wandb project')
-    parser.add_argument('--group', type=str, default="5tasks_cifar100", help='wandb group')
     parser.add_argument('--seed', type=int, default=2023, help='random seed')
-
-    # federated continual learning settings
     parser.add_argument('--dataset', type=str, default="cifar100", help='which dataset')
     parser.add_argument('--tasks', type=int, default=5, help='num of tasks')
     # todo
-    parser.add_argument('--method', type=str, default="icarl", help='choose a learner')
     parser.add_argument('--net', type=str, default="resnet32", help='choose a model')
     parser.add_argument('--com_round', type=int, default=100, help='communication rounds')
     parser.add_argument('--num_users', type=int, default=10, help='num of clients')
