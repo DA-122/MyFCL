@@ -12,6 +12,10 @@ from utils.data_manager import DummyDataset, _get_idata
 from torchvision import transforms
 from einops import rearrange
 
+import umap.umap_ as umap
+import matplotlib
+matplotlib.rc("font",family='SimHei') # 中文字体
+
 
 EPSILON = 1e-8
 batch_size = 64
@@ -104,8 +108,6 @@ class BaseLearner(object):
         }        
         torch.save(save_dict, "{}_{}.pkl".format(filename, self._cur_task))
         # torch.save(self._network,"{}_{}.pkl".format(filename, self._cur_task))
-
-
 
     def _evaluate(self, y_pred, y_true):
         ret = {}
@@ -497,6 +499,40 @@ class BaseLearner(object):
         plt.ylabel("Number of samples")
         plt.legend(loc="upper right")
         plt.title("Display Label Distribution on Different Clients")
-        plt.show()
         if self.wandb == 1:
-            wandb.log({"task_{}_distribution_beta{}".format(self._cur_task,self.args["beta"]): wandb.Plotly(plt.gcf())})()
+            wandb.log({"task_{}_distribution_beta{}".format(self._cur_task,self.args["beta"]): wandb.Plotly(plt.gcf())})
+
+    # 展示TSNE降维
+    def show_Tsne(self, test_dataset, size = 1000):
+        # first = test_dataset.images[0]
+        
+        test_datas = test_dataset.images[0: size].transpose(0, 3, 1, 2)
+        test_labels = test_dataset.labels[0: size]
+        dic = test_dataset.classes
+        with torch.no_grad():
+            test_features = self._network.extract_vector(torch.tensor(test_datas).to(torch.float32)).numpy()
+            # first_features = self._network.extract_vector(torch.tensor(first).to(torch.float32)).numpy()
+
+        mapper = umap.UMAP(n_neighbors=10, n_components=2, random_state=12).fit(test_features)
+        # mapper.embedding_.shape
+        X_umap_2d = mapper.embedding_
+
+        plt.rcParams['axes.unicode_minus']=False #用来正常显示负号
+
+        plt.figure(figsize=(14, 14))
+        for idx in range(len(dic)): # 遍历每个类别
+        # 获取颜色和点型
+            color = idx
+            # marker = marker_list[idx%len(marker_list)]
+
+        # 找到所有标注类别为当前类别的图像索引号
+            indices = np.where(test_labels==idx)
+            plt.scatter(X_umap_2d[indices, 0], X_umap_2d[indices, 1], label=dic[idx], s=150)
+
+        plt.legend(fontsize=16, markerscale=1, bbox_to_anchor=(1, 1))
+        plt.xticks([])
+        plt.yticks([])
+        plt.savefig('res18-cifar100_{}.pdf'.format(self._cur_task), dpi=300) # 保存图像
+        # plt.show()
+
+

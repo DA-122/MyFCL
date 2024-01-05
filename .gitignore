@@ -3,3 +3,6 @@ run
 exps
 __pycache__
 ckpt
+*.pt
+*.pkl
+*.pdf

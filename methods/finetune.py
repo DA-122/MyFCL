@@ -60,7 +60,6 @@ class Finetune(BaseLearner):
 
     def after_task(self):
         self._known_classes = self._total_classes
-        # self.pre_loader = self.test_loader
         self._old_network = self._network.copy().freeze()
 
 
@@ -100,14 +99,24 @@ class Finetune(BaseLearner):
         if self.wandb == 1:
             self.show_dataset(train_dataset)
 
-        # # 获得新任务的测试数据集
+        # 获得新任务的测试数据集
         test_dataset = data_manager.get_dataset(
             np.arange(0, self._total_classes), source="test", mode="test"
-        )
+        ) 
+
+        # 模型载入checkpoint
+        # if self._cur_task < 4:
+        #     ckp_dict = torch.load("checkpoint_0_finetune_finetune_10clients_5tasks_beta0.5_{}_{}.pkl".format(self._cur_task,self._cur_task))
+        #     self._network.load_state_dict(ckp_dict["model_state_dict"])
+        
+        # TSNE可视化
+        # self.show_Tsne(test_dataset)
+
         self.test_loader = DataLoader(
             test_dataset, batch_size=256, shuffle=False, num_workers=4
         )
         setup_seed(self.seed)
+        #!
         self._fl_train(train_dataset, self.test_loader)
         
 
@@ -247,10 +256,6 @@ class Finetune(BaseLearner):
                 prog_bar.set_description(info)
                 if self.wandb == 1:
                     wandb.log({'Task_{}, accuracy'.format(self._cur_task): test_acc})
-            
-            #!
-            # break
-
 
         acc_arr = np.array(cls_acc_list)
         acc_max = acc_arr.max(axis=0)
