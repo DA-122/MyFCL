@@ -7,12 +7,15 @@ from tqdm import tqdm
 from methods.base import BaseLearner
 from utils.inc_net import IncrementalNet
 from utils.data_manager import partition_data, DatasetSplit, average_weights, setup_seed
+from utils.compressor import get_compressor_model
+
 
 class MyFCL(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
         self._network = IncrementalNet(args, False)
         self.acc = []
+        self._compressor = get_compressor_model(args['dataset'], False)
 
 
     def after_task(self):

@@ -106,7 +106,7 @@ class BaseLearner(object):
             "tasks": self._cur_task,
             "model_state_dict": self._network.state_dict(),
         }        
-        torch.save(save_dict, "{}_{}.pkl".format(filename, self._cur_task))
+        torch.save(save_dict, "./checkpoint/{}_{}.pkl".format(filename, self._cur_task))
         # torch.save(self._network,"{}_{}.pkl".format(filename, self._cur_task))
 
     def _evaluate(self, y_pred, y_true):

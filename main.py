@@ -70,7 +70,7 @@ def args_parser():
     parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
     parser.add_argument('--project', type=str, default="TARGET", help='wandb project')
-    parser.add_argument('--group', type=str, default="exp1", help='wandb group')
+    parser.add_argument('--group', type=str, default="5tasks_cifar100", help='wandb group')
     parser.add_argument('--seed', type=int, default=2023, help='random seed')
 
     # federated continual learning settings
