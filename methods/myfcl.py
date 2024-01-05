@@ -16,8 +16,27 @@ class MyFCL(BaseLearner):
         self._network = IncrementalNet(args, False)
         self.acc = []
         self._compressor = get_compressor_model(args['dataset'], False)
+    # 压缩
+    def compress_data(self, replay_samples):
+        encoding = self._compressor(replay_samples)
+        quantized_inputs, _ = self.vq_layer(encoding)
+        
+        return quantized_inputs
 
+    # 解压缩
+    def decompress_data(self, quantized_inputs):
+        return self._compressor.decode(quantized_inputs)
+    #
 
+    # 填充缓冲区
+    def build_memory(self, selected_exemplar_data, selected_exemplar_label):
+        
+        self._targets_memory
+
+    # 获得缓冲区中的数据
+    def get_memory(self, ):
+        return 
+    
     def after_task(self):
         self._known_classes = self._total_classes
         self._old_network = self._network.copy().freeze()
@@ -54,7 +73,7 @@ class MyFCL(BaseLearner):
             test_dataset, batch_size=256, shuffle=False, num_workers=4
         )
         setup_seed(self.seed)
-        self._fl_train(train_dataset, self.test_loader)
+        self._fl_train(train_dataset, data_manager, self.test_loader)
 
 
     def _local_update(self, model, train_data_loader, client_id, tmp, com_id):
@@ -98,7 +117,7 @@ class MyFCL(BaseLearner):
     
     
     
-    def _fl_train(self, train_dataset, ):
+    def _fl_train(self, train_dataset, data_manager,test_loader):
         self._network.cuda()
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
         prog_bar = tqdm(range(self.args["com_round"]))

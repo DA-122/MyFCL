@@ -52,7 +52,7 @@ def refine_as_not_true(logits, targets, num_classes):
     return logits
 
 
-class Finetune(BaseLearner):
+class ReplayFinetune(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
         self._network = IncrementalNet(args, False)
@@ -140,7 +140,7 @@ class Finetune(BaseLearner):
         # self.show_Tsne(test_dataset)
 
         self.test_loader = DataLoader(
-            test_dataset, batch_size=256, shuffle=False, num_workers=4
+            test_dataset, batch_size=256, shuffle=False, num_workers=0
         )
         setup_seed(self.seed)
         #!
@@ -225,8 +225,6 @@ class Finetune(BaseLearner):
         # print(out_cls_acc)
         
 
-        
-
     def _local_finetune(self, model, train_data_loader):
         model.train()
         optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
@@ -242,10 +240,12 @@ class Finetune(BaseLearner):
                 loss.backward()
                 optimizer.step()
             # self.per_cls_acc(self.test_loader, model)
-
         return model.state_dict()
 
     def _fl_train(self, train_dataset, test_loader,data_manager):
+        if self._cur_task==0:
+            return
+
         self._network.cuda()
         cls_acc_list = []
         user_groups = partition_data(train_dataset.labels, beta=self.args["beta"], n_parties=self.args["num_users"])
@@ -266,7 +266,7 @@ class Finetune(BaseLearner):
                     current_local_dataset = DatasetSplit(train_dataset, user_groups[idx])
                     previous_local_dataset = self.get_all_previous_dataset(data_manager, idx) 
 
-                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self.memory_size)
+                    local_dataset = self.combine_dataset(previous_local_dataset, current_local_dataset, self._memory_per_class*self._known_classes)
                     local_dataset = DatasetSplit(local_dataset, range(local_dataset.labels.shape[0]))
 
                 local_train_loader = DataLoader(DatasetSplit(train_dataset, user_groups[idx]), 

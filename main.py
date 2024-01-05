@@ -10,6 +10,7 @@ from methods.lwf import LwF
 from methods.ewc import EWC
 from methods.target import TARGET
 from methods.myfcl import MyFCL
+from methods.replay_finetune import ReplayFinetune
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -28,6 +29,8 @@ def get_learner(model_name, args):
         return TARGET(args)
     elif name == "ours":
         return MyFCL(args)
+    elif name == "replayfinetune":
+        return ReplayFinetune(args)
     else:
         assert 0
         
@@ -50,13 +53,13 @@ def train(args):
         print("All params: {}, Trainable params: {}".format(count_parameters(learner._network), 
             count_parameters(learner._network, True))) 
         learner.incremental_train(data_manager) # train for one task
-        cnn_accy, nme_accy = learner.eval_task()
+        # cnn_accy, nme_accy = learner.eval_task()
         learner.after_task()
-        # 增加检查点
-        learner.save_checkpoint("checkpoint_{}_{}".format(args["exp_name"],task))
-        print("CNN: {}".format(cnn_accy["grouped"]))
-        cnn_curve["top1"].append(cnn_accy["top1"])
-        print("CNN top1 curve: {}".format(cnn_curve["top1"]))
+        # # 增加检查点
+        # learner.save_checkpoint("checkpoint_{}_{}".format(args["exp_name"],task))
+        # print("CNN: {}".format(cnn_accy["grouped"]))
+        # cnn_curve["top1"].append(cnn_accy["top1"])
+        # print("CNN top1 curve: {}".format(cnn_curve["top1"]))
         # !
         # break
     
@@ -65,7 +68,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description='benchmark for federated continual learning')
     # Exp settings
     # todo
-    parser.add_argument('--exp_name', type=str, default='test', help='name of this experiment')
+    parser.add_argument('--exp_name', type=str, default='replay_finetune', help='name of this experiment')
     # todo
     parser.add_argument('--wandb', type=int, default=0, help='1 for using wandb')
     parser.add_argument('--save_dir', type=str, default="", help='save the syn data')
@@ -77,10 +80,10 @@ def args_parser():
     parser.add_argument('--dataset', type=str, default="cifar100", help='which dataset')
     parser.add_argument('--tasks', type=int, default=5, help='num of tasks')
     # todo
-    parser.add_argument('--method', type=str, default="finetune", help='choose a learner')
+    parser.add_argument('--method', type=str, default="replayfinetune", help='choose a learner')
     parser.add_argument('--net', type=str, default="resnet32", help='choose a model')
     parser.add_argument('--com_round', type=int, default=100, help='communication rounds')
-    parser.add_argument('--num_users', type=int, default=5, help='num of clients')
+    parser.add_argument('--num_users', type=int, default=10, help='num of clients')
     parser.add_argument('--local_bs', type=int, default=128, help='local batch size')
     parser.add_argument('--local_ep', type=int, default=5, help='local training epochs')
     parser.add_argument('--beta', type=float, default=0, help='control the degree of label skew')
