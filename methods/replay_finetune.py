@@ -53,7 +53,6 @@ def refine_as_not_true(logits, targets, num_classes):
 
 
 class ReplayFinetune(BaseLearner):
-class ReplayFinetune(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
         self._network = IncrementalNet(args, False)
@@ -142,7 +141,6 @@ class ReplayFinetune(BaseLearner):
         # self.show_Tsne(test_dataset)
 
         self.test_loader = DataLoader(
-            test_dataset, batch_size=256, shuffle=False, num_workers=0
             test_dataset, batch_size=256, shuffle=False, num_workers=0
         )
         setup_seed(self.seed)

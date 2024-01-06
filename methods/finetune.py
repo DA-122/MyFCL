@@ -105,18 +105,20 @@ class Finetune(BaseLearner):
         ) 
 
         # 模型载入checkpoint
-        # if self._cur_task < 4:
-        #     ckp_dict = torch.load("checkpoint_0_finetune_finetune_10clients_5tasks_beta0.5_{}_{}.pkl".format(self._cur_task,self._cur_task))
-        #     self._network.load_state_dict(ckp_dict["model_state_dict"])
+        if self._cur_task < 4:
+            # file_name = "checkpoint_0_finetune_finetune_10clients_5tasks_beta0.5_{}_{}.pkl".format(self._cur_task,self._cur_task)
+            file_name = "./checkpoint/checkpoint_0_icarl_icarl_10clients_5tasks_iid_{}_{}.pkl".format(self._cur_task,self._cur_task)
+            ckp_dict = torch.load(file_name)
+            self._network.load_state_dict(ckp_dict["model_state_dict"])
         
         # TSNE可视化
-        # self.show_Tsne(test_dataset)
+        self.show_Tsne(test_dataset)
 
         self.test_loader = DataLoader(
             test_dataset, batch_size=256, shuffle=False, num_workers=4
         )
         setup_seed(self.seed)
-        self._fl_train(train_dataset, self.test_loader)
+        # self._fl_train(train_dataset, self.test_loader)
         
 
         # if self._cur_task == 0:

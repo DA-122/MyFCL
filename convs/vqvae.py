@@ -248,8 +248,8 @@ if __name__ == '__main__':
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
-    train_dataset = datasets.CIFAR10('../datasets/cifar-10', train=True, download=True, transform=transform)
-    test_dataset = datasets.CIFAR10('../datasets/cifar-10', train=False, download=True, transform=transform)
+    train_dataset = datasets.CIFAR100('../datasets', train=True, download=True, transform=transform)
+    test_dataset = datasets.CIFAR100('../datasets', train=False, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size = 16, shuffle=True)
 
@@ -271,7 +271,7 @@ if __name__ == '__main__':
             best_loss = loss
             # with open('vqvae_{0}/best.pt'.format(save_filename), 'wb') as f:
                 # torch.save(model.state_dict(), f)
-            torch.save(model.state_dict(), 'vqvae_best_1.pt')
+            torch.save(model.state_dict(), 'vqvae_best_1_cifar100.pt')
         if epoch == num_epochs - 1:
             print("train complete , best loss: {}".format(best_loss))
         # with open('vqvae_{0}/model_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:

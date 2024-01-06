@@ -525,13 +525,10 @@ class BaseLearner(object):
         # 获取颜色和点型
             color = idx
             # marker = marker_list[idx%len(marker_list)]
-
         # 找到所有标注类别为当前类别的图像索引号
             indices = np.where(test_labels==idx)
             plt.scatter(X_umap_2d[indices, 0], X_umap_2d[indices, 1], label=dic[idx], s=150)
-
         plt.legend(fontsize=16, markerscale=1, bbox_to_anchor=(1, 1))
         plt.xticks([])
         plt.yticks([])
-        plt.savefig('res18-cifar100_{}.pdf'.format(self._cur_task), dpi=300) # 保存图像
-        # plt.show()
+        plt.show()
