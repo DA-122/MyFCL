@@ -10,6 +10,22 @@ from utils.data_manager import partition_data, DatasetSplit, average_weights, se
 from utils.compressor import get_compressor_model
 
 
+def print_data_stats(client_id, train_data_loader):
+    # pdb.set_trace()
+    def sum_dict(a,b):
+        temp = dict()
+        for key in a.keys() | b.keys():
+            temp[key] = sum([d.get(key, 0) for d in (a, b)])
+        return temp
+    temp = dict()
+    for batch_idx, (_, images, labels) in enumerate(train_data_loader):
+        unq, unq_cnt = np.unique(labels, return_counts=True)
+        tmp = {unq[i]: unq_cnt[i] for i in range(len(unq))}
+        temp = sum_dict(tmp, temp)
+    return sorted(temp.items(),key=lambda x:x[0])
+
+
+
 class MyFCL(BaseLearner):
     def __init__(self, args):
         super().__init__(args)
